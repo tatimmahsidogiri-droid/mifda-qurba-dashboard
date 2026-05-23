@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: #f5f7fa; color: #2d3748; min-height: 100vh; }
+    .header { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); color: white; padding: 15px 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
+    .header h1 { font-size: 17px; font-weight: 700; }
+    .header .nama { font-size: 13px; opacity: 0.9; margin-top: 3px; }
+    .header .period { font-size: 12px; margin-top: 3px; color: #fbbf24; }
+    .container { max-width: 900px; margin: 0 auto; padding: 15px; }
+    .filter-card { background: white; border-radius: 16px; padding: 15px 20px; margin-bottom: 15px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .filter-card label { font-size: 11px; font-weight: 600; color: #666; }
+    .filter-card select { padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 12px; font-family: 'Poppins', sans-serif; flex: 1; min-width: 100px; }
+    .btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; white-space: nowrap; }
+    .btn-refresh { background: #0f3460; color: white; }
+    .btn-outline { background: white; color: #0f3460; border: 2px solid #0f3460; }
+    .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 6px; }
+    .btn-logout { background: #ef4444; color: white; }
+    .stats-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+    .stat-card { flex: 1; min-width: 90px; background: white; border-radius: 14px; padding: 15px 10px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .stat-card .stat-icon { font-size: 24px; margin-bottom: 4px; }
+    .stat-card .stat-value { font-size: 20px; font-weight: 700; color: #0f3460; }
+    .stat-card .stat-label { font-size: 9px; color: #888; margin-top: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .card-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #0f3460; display: flex; align-items: center; gap: 6px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+    .dot-blue { background: #3b82f6; }
+    .dot-orange { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 400px; }
+    th { background: #f8fafc; padding: 8px 6px; text-align: left; font-weight: 600; font-size: 10px; color: #666; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+    td { padding: 8px 6px; border-bottom: 1px solid #f0f0f0; font-size: 11px; }
+    tr:hover td { background: #fafcff; }
+    .chart-container { width: 100%; margin: 10px 0; }
+    .chart-container canvas { width: 100% !important; max-height: 250px; }
+    .chart-row { display: flex; flex-wrap: wrap; gap: 15px; }
+    .chart-card { flex: 1; min-width: 280px; background: white; border-radius: 16px; padding: 15px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 15px; }
+    .chart-card h3 { font-size: 12px; font-weight: 600; color: #555; text-align: center; margin-bottom: 10px; }
+    .text-center { text-align: center; }
+    .platform-icon { width: 20px; height: 20px; vertical-align: middle; margin-right: 4px; }
+    @media (max-width: 600px) {
+      .stats-row .stat-card { min-width: 70px; padding: 10px 5px; }
+      .stat-card .stat-value { font-size: 16px; }
+      .header h1 { font-size: 15px; }
+      .chart-row { flex-direction: column; }
+      .filter-card { flex-direction: column; }
+      .filter-card select { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📊 Dashboard Pengurus</h1>
+    <div class="nama" id="namaPengurusHeader">Memuat...</div>
+    <div class="period" id="textPeriode">Pilih Bulan & Tahun</div>
+  </div>
+  
+  <div class="container">
+    <div class="filter-card">
+      <label>📅 Bulan:</label><select id="filterBulan"></select>
+      <label>📆 Tahun:</label><select id="filterTahun"></select>
+      <button class="btn btn-refresh" id="btnLihat">🔄 Lihat</button>
+      <button class="btn btn-outline btn-sm" id="btnLap">📊 Laporan</button>
+      <button class="btn btn-logout" id="btnKeluar">🚪 Keluar</button>
+    </div>
+    
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-icon"><img src="https://img.icons8.com/color/48/instagram-new.png" width="24"></div><div class="stat-value" id="statIG">0</div><div class="stat-label">Poin IG</div></div>
+      <div class="stat-card"><div class="stat-icon"><img src="https://img.icons8.com/color/48/facebook-new.png" width="24"></div><div class="stat-value" id="statFB">0</div><div class="stat-label">Poin FB</div></div>
+      <div class="stat-card"><div class="stat-icon"><img src="https://img.icons8.com/color/48/tiktok--v1.png" width="24"></div><div class="stat-value" id="statTT">0</div><div class="stat-label">Poin TT</div></div>
+      <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total Poin</div></div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title"><span class="dot dot-blue"></span> Detail Poin Saya</div>
+      <div class="table-wrap" id="tabelPoinSaya"></div>
+    </div>
+    
+    <div class="chart-row">
+      <div class="chart-card"><h3>📊 Postingan per Bulan</h3><div class="chart-container"><canvas id="chartHistorisPost"></canvas></div></div>
+      <div class="chart-card"><h3>📈 Followers per Bulan</h3><div class="chart-container"><canvas id="chartHistorisFol"></canvas></div></div>
+    </div>
+  </div>
+  
+  <script>
+    var BASE_URL = 'https://script.google.com/macros/s/AKfycbyok_773z-HjbarnOA5q74MDop8BE6O-2b1Xl0EQ4GmpVi-jg-kNFIhDzra62GHLWp5/exec';
+    function getUrl(page) { return BASE_URL + '?page=' + page; }
+    
+    var namaPengurus = '', dataSaya = null, chartInstances = {};
+    
+    function showToast(msg, type) {
+      var et = document.querySelector('.custom-toast'); if (et) et.remove();
+      var t = document.createElement('div'); t.className = 'custom-toast'; t.textContent = msg;
+      t.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:14px 24px;border-radius:12px;font-size:13px;font-weight:600;z-index:9999;font-family:Poppins,sans-serif;max-width:90%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.2);';
+      if (type==='error') { t.style.background='#fee2e2'; t.style.color='#991b1b'; t.style.border='2px solid #fecaca'; }
+      else if (type==='success') { t.style.background='#d1fae5'; t.style.color='#065f46'; t.style.border='2px solid #a7f3d0'; }
+      else { t.style.background='#1a1a2e'; t.style.color='white'; }
+      document.body.appendChild(t);
+      setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(-20px)'; setTimeout(function(){ if(t.parentNode) t.remove(); },300); },3000);
+    }
+    
+    function logout() { localStorage.removeItem('mifda_session'); window.location.href = getUrl('login'); }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('btnLihat').addEventListener('click', loadData);
+      document.getElementById('btnKeluar').addEventListener('click', logout);
+      document.getElementById('btnLap').addEventListener('click', function(){ window.open(getUrl('laporan')); });
+      
+      var session = localStorage.getItem('mifda_session');
+      if (!session) { window.location.href = getUrl('login'); return; }
+      var sess = JSON.parse(session);
+      if (new Date().getTime() - sess.loginTime > 7200000) { localStorage.removeItem('mifda_session'); window.location.href = getUrl('login'); return; }
+      var params = new URLSearchParams(window.location.search);
+      namaPengurus = params.get('nama') || sess.role;
+      if (namaPengurus === 'admin') { window.location.href = getUrl('admin'); return; }
+      document.getElementById('namaPengurusHeader').textContent = '👤 ' + namaPengurus;
+      google.script.run.withSuccessHandler(function(data) {
+        var sb = document.getElementById('filterBulan'); sb.innerHTML = '';
+        data.bulanHijri.forEach(function(b) { var o=document.createElement('option'); o.value=b; o.textContent=b; sb.appendChild(o); });
+        var st = document.getElementById('filterTahun'); st.innerHTML = '';
+        data.tahunHijri.forEach(function(t) { var o=document.createElement('option'); o.value=t; o.textContent=t; st.appendChild(o); });
+        sb.value = data.bulanHijri[0]||''; st.value = data.tahunHijri[0]||'';
+        if (sb.value && st.value) loadData();
+      }).getDropdownData();
+    });
+    
+    function loadData() {
+      var b = document.getElementById('filterBulan').value, t = document.getElementById('filterTahun').value;
+      if (!b||!t) return;
+      document.getElementById('textPeriode').textContent = '📅 ' + b + ' ' + t;
+      google.script.run.withSuccessHandler(function(data) {
+        dataSaya = data;
+        renderStats(); renderTabel(); renderGrafik();
+        showToast('✅ Data berhasil dimuat!', 'success');
+      }).withFailureHandler(function(err) { showToast('❌ '+err.message, 'error'); }).ambilDataPengurus(namaPengurus, b, t);
+    }
+    
+    function renderStats() {
+      if (!dataSaya) return;
+      document.getElementById('statIG').textContent = dataSaya.totalIG || 0;
+      document.getElementById('statFB').textContent = dataSaya.totalFB || 0;
+      document.getElementById('statTT').textContent = dataSaya.totalTT || 0;
+      document.getElementById('statTotal').textContent = dataSaya.grandTotal || 0;
+    }
+    
+    function renderTabel() {
+      if (!dataSaya) return;
+      var igIcon = '<img src="https://img.icons8.com/color/48/instagram-new.png" class="platform-icon">';
+      var fbIcon = '<img src="https://img.icons8.com/color/48/facebook-new.png" class="platform-icon">';
+      var ttIcon = '<img src="https://img.icons8.com/color/48/tiktok--v1.png" class="platform-icon">';
+      var h = '<table><thead><tr><th>Platform</th><th>Kategori</th><th>Nilai</th><th class="text-center">Poin</th></tr></thead><tbody>';
+      h += '<tr><td rowspan="2"><b>'+igIcon+' Instagram</b></td><td>Pertumbuhan Followers</td><td>'+(dataSaya.igGrowth>=0?'+'+dataSaya.igGrowth:dataSaya.igGrowth)+'</td><td class="text-center"><b>'+dataSaya.igFolPoin+'</b></td></tr>';
+      h += '<tr><td>Jumlah Postingan</td><td>'+dataSaya.igPostJml+'</td><td class="text-center"><b>'+dataSaya.igPostPoin+'</b></td></tr>';
+      h += '<tr style="background:#f0f4ff;"><td colspan="3"><b>Total Poin IG</b></td><td class="text-center"><b>'+dataSaya.totalIG+'</b></td></tr>';
+      h += '<tr><td rowspan="2"><b>'+fbIcon+' Facebook</b></td><td>Pertumbuhan Followers</td><td>'+(dataSaya.fbGrowth>=0?'+'+dataSaya.fbGrowth:dataSaya.fbGrowth)+'</td><td class="text-center"><b>'+dataSaya.fbFolPoin+'</b></td></tr>';
+      h += '<tr><td>Jumlah Postingan</td><td>'+dataSaya.fbPostJml+'</td><td class="text-center"><b>'+dataSaya.fbPostPoin+'</b></td></tr>';
+      h += '<tr style="background:#fef7e0;"><td colspan="3"><b>Total Poin FB</b></td><td class="text-center"><b>'+dataSaya.totalFB+'</b></td></tr>';
+      h += '<tr><td rowspan="2"><b>'+ttIcon+' TikTok</b></td><td>Pertumbuhan Followers</td><td>'+(dataSaya.ttGrowth>=0?'+'+dataSaya.ttGrowth:dataSaya.ttGrowth)+'</td><td class="text-center"><b>'+dataSaya.ttFolPoin+'</b></td></tr>';
+      h += '<tr><td>Total Like</td><td>'+dataSaya.ttLikeJml+'</td><td class="text-center"><b>'+dataSaya.ttLikePoin+'</b></td></tr>';
+      h += '<tr style="background:#f0faf3;"><td colspan="3"><b>Total Poin TT</b></td><td class="text-center"><b>'+dataSaya.totalTT+'</b></td></tr>';
+      h += '<tr style="background:#1a1a2e;color:white;"><td colspan="3"><b>GRAND TOTAL</b></td><td class="text-center"><b>'+dataSaya.grandTotal+'</b></td></tr>';
+      h += '</tbody></table>';
+      document.getElementById('tabelPoinSaya').innerHTML = h;
+    }
+    
+    function renderGrafik() {
+      if (!dataSaya) return;
+      Object.keys(chartInstances).forEach(function(key) { if (chartInstances[key]) { try { chartInstances[key].destroy(); } catch(e) {} } });
+      chartInstances = {};
+      var hist = dataSaya.historis || { bulanList: [], postingan: {}, follower: {} };
+      var bl = hist.bulanList || [];
+      var postData = bl.map(function(b) { return hist.postingan[b]||0; });
+      var folData = bl.map(function(b) { return hist.follower[b]||0; });
+      
+      var ctx1 = document.getElementById('chartHistorisPost');
+      if (ctx1) { chartInstances.histPost = new Chart(ctx1, { type: 'bar', data: { labels: bl, datasets: [{ data: postData, backgroundColor: '#3b82f6', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, ticks: { stepSize: 1 } } } } }); }
+      
+      var ctx2 = document.getElementById('chartHistorisFol');
+      if (ctx2) { chartInstances.histFol = new Chart(ctx2, { type: 'line', data: { labels: bl, datasets: [{ data: folData, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#10b981', pointBorderColor: 'white', pointBorderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: false, ticks: { callback: function(v) { return v>=1000?(v/1000).toFixed(1)+'K':v; } } } } } }); }
+    }
+  </script>
+</body>
+</html>
