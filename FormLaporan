@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: #f0f2f5; padding: 15px; }
+    .container { max-width: 550px; margin: 0 auto; background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0; }
+    .header h2 { margin: 0; color: #0f3460; font-size: 18px; }
+    .header p { margin: 4px 0 0; color: #888; font-size: 11px; }
+    label { display: block; font-weight: 600; margin-top: 14px; margin-bottom: 4px; color: #333; font-size: 12px; }
+    select, input { width: 100%; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 13px; font-family: 'Poppins', sans-serif; background: #f9fafb; }
+    select:focus, input:focus { border-color: #0f3460; outline: none; }
+    select:disabled, input:disabled { background: #eee; color: #999; }
+    .platform-section { background: #f8fafc; border-radius: 12px; padding: 15px; margin-top: 15px; border-left: 4px solid #0f3460; }
+    .platform-section h3 { font-size: 14px; color: #0f3460; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .row { display: flex; gap: 10px; }
+    .row>div { flex: 1; }
+    .file-upload { border: 2px dashed #ddd; padding: 12px; text-align: center; border-radius: 10px; cursor: pointer; background: white; transition: all 0.2s; font-size: 11px; color: #888; }
+    .file-upload:hover { border-color: #0f3460; background: #f0f4ff; }
+    .file-upload.has-file { border-color: #10b981; background: #f0faf3; color: #10b981; font-weight: 600; }
+    .file-upload input { display: none; }
+    button { width: 100%; padding: 14px; background: #0f3460; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; margin-top: 20px; cursor: pointer; font-family: 'Poppins', sans-serif; }
+    button:hover { background: #1a4a8a; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-back { background: white; color: #0f3460; border: 2px solid #0f3460; margin-top: 10px; }
+    .btn-back:hover { background: #f0f4ff; }
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 14px 24px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 9999; font-family: 'Poppins', sans-serif; max-width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none; }
+    .toast.success { background: #d1fae5; color: #065f46; border: 2px solid #a7f3d0; }
+    .toast.error { background: #fee2e2; color: #991b1b; border: 2px solid #fecaca; }
+    .locked-card { text-align: center; padding: 40px 20px; }
+    .locked-card .icon { font-size: 60px; display: block; margin-bottom: 15px; }
+    .locked-card h3 { font-size: 18px; color: #333; margin-bottom: 8px; }
+    .locked-card p { font-size: 13px; color: #888; margin-bottom: 20px; }
+    .note { background: #fef3c7; padding: 10px; border-radius: 8px; font-size: 10px; color: #92400e; margin-top: 15px; text-align: center; }
+    @media (max-width: 500px) { .row { flex-direction: column; gap: 0; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><h2>📊 Laporan Bulanan</h2><p>MIFDA & QURBA - Isi sekali per bulan</p></div>
+    <div id="lockedView" style="display:none;">
+      <div class="locked-card"><span class="icon">⛔</span><h3>Laporan Belum Dibuka</h3><p id="lockedMsg">Admin belum membuka laporan untuk bulan ini.</p><button class="btn-back" onclick="goBack()">🔙 Kembali ke Dashboard</button></div>
+    </div>
+    <form id="formLaporan" onsubmit="event.preventDefault(); simpan();">
+      <label>🏢 Nama Pengurus</label>
+      <select id="namaPengurus" required><option value="">-- Pilih --</option></select>
+      <div class="row">
+        <div><label>📅 Bulan Hijri</label><select id="bulanHijri" required disabled><option value="">-- Otomatis --</option></select></div>
+        <div><label>📆 Tahun Hijri</label><select id="tahunHijri" required disabled><option value="">-- Otomatis --</option></select></div>
+      </div>
+      <div class="platform-section">
+        <h3>📷 Instagram</h3>
+        <div class="row">
+          <div><label>Followers</label><input type="number" id="igFol" placeholder="Jumlah followers" required></div>
+          <div><label>Jumlah Postingan</label><input type="number" id="igPost" placeholder="Jumlah post" required></div>
+        </div>
+        <label style="margin-top:8px;">Screenshot Bio</label>
+        <div class="file-upload" id="igUpload" onclick="document.getElementById('igFile').click()">📸 Klik upload Screenshot IG</div>
+        <input type="file" id="igFile" accept="image/*" onchange="handleFile(this,'igUpload','igSS')"><input type="hidden" id="igSS">
+      </div>
+      <div class="platform-section">
+        <h3>📘 Facebook</h3>
+        <div class="row">
+          <div><label>Followers</label><input type="number" id="fbFol" placeholder="Jumlah followers" required></div>
+          <div><label>Jumlah Postingan</label><input type="number" id="fbPost" placeholder="Jumlah post" required></div>
+        </div>
+        <label style="margin-top:8px;">Screenshot Bio</label>
+        <div class="file-upload" id="fbUpload" onclick="document.getElementById('fbFile').click()">📸 Klik upload Screenshot FB</div>
+        <input type="file" id="fbFile" accept="image/*" onchange="handleFile(this,'fbUpload','fbSS')"><input type="hidden" id="fbSS">
+      </div>
+      <div class="platform-section">
+        <h3>🎵 TikTok</h3>
+        <div class="row">
+          <div><label>Followers</label><input type="number" id="ttFol" placeholder="Jumlah followers" required></div>
+          <div><label>Total Like</label><input type="number" id="ttLike" placeholder="Total like" required></div>
+        </div>
+        <label style="margin-top:8px;">Screenshot Bio</label>
+        <div class="file-upload" id="ttUpload" onclick="document.getElementById('ttFile').click()">📸 Klik upload Screenshot TT</div>
+        <input type="file" id="ttFile" accept="image/*" onchange="handleFile(this,'ttUpload','ttSS')"><input type="hidden" id="ttSS">
+      </div>
+      <button type="submit" id="btnSimpan">💾 Simpan Laporan</button>
+      <button type="button" class="btn-back" onclick="goBack()">🔙 Kembali ke Dashboard</button>
+    </form>
+    <div class="note">⚠️ Isi sekali per bulan. Data bisa diupdate selama laporan masih dibuka.</div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script>
+    var role = '', namaPengurus = '';
+    function showToast(msg, type) { var t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast ' + (type||'success'); t.style.display = 'block'; setTimeout(function(){ t.style.display = 'none'; }, 4000); }
+    function goBack() {
+      var session = localStorage.getItem('mifda_session');
+      if (session) { var sess = JSON.parse(session); if (sess.role === 'admin') { window.location.href = getUrl('admin'); } else { window.location.href = getUrl('pengurus') + '&nama=' + encodeURIComponent(sess.role); } }
+      else { window.location.href = getUrl('login'); }
+    }
+    function getUrl(page) { return 'https://script.google.com/macros/s/AKfycbyok_773z-HjbarnOA5q74MDop8BE6O-2b1Xl0EQ4GmpVi-jg-kNFIhDzra62GHLWp5/exec?page=' + page; }
+    function handleFile(input, boxId, hiddenId) {
+      var file = input.files[0]; if (!file) return;
+      if (file.size > 2097152) { showToast('❌ Ukuran > 2MB!', 'error'); return; }
+      var reader = new FileReader();
+      reader.onload = function(e) { document.getElementById(hiddenId).value = e.target.result; document.getElementById(boxId).textContent = '✅ ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)'; document.getElementById(boxId).classList.add('has-file'); };
+      reader.readAsDataURL(file);
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var session = localStorage.getItem('mifda_session');
+      if (session) { var sess = JSON.parse(session); role = sess.role; namaPengurus = sess.role !== 'admin' ? sess.role : ''; }
+      google.script.run.withSuccessHandler(function(status) {
+        if (status.status === 'BUKA') {
+          document.getElementById('lockedView').style.display = 'none'; document.getElementById('formLaporan').style.display = 'block';
+          document.getElementById('bulanHijri').innerHTML = '<option value="'+status.bulan+'" selected>'+status.bulan+'</option>';
+          document.getElementById('tahunHijri').innerHTML = '<option value="'+status.tahun+'" selected>'+status.tahun+'</option>';
+          google.script.run.withSuccessHandler(function(data) {
+            var selP = document.getElementById('namaPengurus');
+            data.pengurus.forEach(function(p) { var opt = document.createElement('option'); opt.value = p; opt.textContent = p; if (role !== 'admin' && p === namaPengurus) opt.selected = true; selP.appendChild(opt); });
+            if (role !== 'admin') selP.disabled = true;
+          }).getDropdownData();
+        } else {
+          document.getElementById('lockedView').style.display = 'block'; document.getElementById('formLaporan').style.display = 'none';
+          document.getElementById('lockedMsg').textContent = 'Admin belum membuka laporan untuk bulan ini. Silakan cek kembali nanti.';
+        }
+      }).getStatusLaporan();
+    });
+    function simpan() {
+      var btn = document.getElementById('btnSimpan'); btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
+      var data = {
+        namaPengurus: document.getElementById('namaPengurus').value, bulanHijri: document.getElementById('bulanHijri').value, tahunHijri: document.getElementById('tahunHijri').value,
+        igFol: document.getElementById('igFol').value, igPost: document.getElementById('igPost').value, igSS: document.getElementById('igSS').value,
+        fbFol: document.getElementById('fbFol').value, fbPost: document.getElementById('fbPost').value, fbSS: document.getElementById('fbSS').value,
+        ttFol: document.getElementById('ttFol').value, ttLike: document.getElementById('ttLike').value, ttSS: document.getElementById('ttSS').value
+      };
+      if (!data.namaPengurus || !data.bulanHijri || !data.tahunHijri) { showToast('⚠️ Isi semua field wajib!', 'error'); btn.disabled = false; btn.textContent = '💾 Simpan Laporan'; return; }
+      google.script.run.withSuccessHandler(function(r) { showToast(r); btn.disabled = false; btn.textContent = '💾 Simpan Laporan'; }).withFailureHandler(function(e) { showToast('❌ '+e.message, 'error'); btn.disabled = false; btn.textContent = '💾 Simpan Laporan'; }).simpanLaporan(data);
+    }
+  </script>
+</body>
+</html>
