@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: #f5f7fa; color: #2d3748; min-height: 100vh; }
+    .header { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); color: white; padding: 20px 25px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
+    .header h1 { font-size: 20px; font-weight: 700; }
+    .header .subtitle { font-size: 11px; opacity: 0.8; margin-top: 4px; font-weight: 300; }
+    .header .period { font-size: 13px; font-weight: 500; margin-top: 6px; color: #fbbf24; }
+    .container { max-width: 950px; margin: 0 auto; padding: 15px; }
+    .filter-card { background: white; border-radius: 16px; padding: 15px 20px; margin-bottom: 15px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .filter-card label { font-size: 11px; font-weight: 600; color: #666; }
+    .filter-card select { padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 12px; font-family: 'Poppins', sans-serif; background: #f9fafb; flex: 1; min-width: 100px; }
+    .btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; white-space: nowrap; }
+    .btn-refresh { background: #0f3460; color: white; }
+    .btn-outline { background: white; color: #0f3460; border: 2px solid #0f3460; }
+    .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 6px; }
+    .btn-logout { background: #ef4444; color: white; }
+    .tabs { display: flex; gap: 5px; margin-bottom: 15px; background: white; border-radius: 14px; padding: 5px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); flex-wrap: wrap; }
+    .tab { flex: 1; text-align: center; padding: 10px 8px; border-radius: 10px; cursor: pointer; font-size: 11px; font-weight: 600; color: #888; min-width: 60px; }
+    .tab.active { background: #0f3460; color: white; }
+    .tab:hover:not(.active) { background: #f0f4ff; color: #0f3460; }
+    .tab .icon { font-size: 16px; display: block; margin-bottom: 2px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .card-title { font-size: 16px; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot-blue { background: #3b82f6; }
+    .dot-orange { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 500px; }
+    th { background: #f8fafc; padding: 8px 6px; text-align: left; font-weight: 600; font-size: 10px; color: #666; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+    td { padding: 8px 6px; border-bottom: 1px solid #f0f0f0; font-size: 11px; }
+    tr:hover td { background: #fafcff; }
+    .rank-1 { background: #fef3c7 !important; font-weight: 700; }
+    .rank-2 { background: #f1f5f9 !important; font-weight: 600; }
+    .rank-3 { background: #fed7aa !important; font-weight: 600; }
+    .podium-container { display: flex; justify-content: center; align-items: flex-end; gap: 15px; padding: 20px 10px 10px; min-height: 220px; }
+    .podium-item { text-align: center; border-radius: 16px 16px 0 0; padding: 15px 10px 10px; position: relative; min-width: 90px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .podium-1 { background: linear-gradient(180deg, #FFD700, #FFA000); height: 160px; order: 2; z-index: 3; }
+    .podium-2 { background: linear-gradient(180deg, #E0E0E0, #9E9E9E); height: 120px; order: 1; z-index: 2; }
+    .podium-3 { background: linear-gradient(180deg, #FFAB91, #E64A19); height: 90px; order: 3; z-index: 1; }
+    .podium-medal { font-size: 30px; display: block; }
+    .podium-name { font-size: 10px; font-weight: 700; color: #333; }
+    .podium-score { font-size: 18px; font-weight: 800; color: #1a1a2e; }
+    .podium-rank { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); width: 32px; height: 32px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: white; padding: 12px 24px; border-radius: 25px; font-size: 12px; font-weight: 500; z-index: 999; opacity: 0; transition: opacity 0.3s; }
+    .toast.show { opacity: 1; }
+    .text-center { text-align: center; }
+    .chart-container { width: 100%; margin: 15px 0; }
+    .chart-container canvas { width: 100% !important; max-height: 300px; }
+    .chart-row { display: flex; flex-wrap: wrap; gap: 15px; }
+    .chart-card { flex: 1; min-width: 280px; background: white; border-radius: 16px; padding: 15px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 15px; }
+    .chart-card h3 { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 10px; text-align: center; }
+    .platform-icon { width: 20px; height: 20px; vertical-align: middle; margin-right: 4px; }
+    .monitor-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .monitor-status { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .status-buka { background: #d1fae5; color: #065f46; }
+    .status-tutup { background: #fee2e2; color: #991b1b; }
+    .monitor-row { display: flex; flex-wrap: wrap; gap: 15px; margin: 15px 0; }
+    .monitor-stat { flex: 1; min-width: 100px; text-align: center; padding: 15px; background: #f8fafc; border-radius: 12px; }
+    .monitor-stat .big { font-size: 28px; font-weight: 700; }
+    .monitor-stat .lbl { font-size: 10px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .monitor-list { font-size: 11px; }
+    .monitor-list td { padding: 4px 8px; border: none; }
+    @media (max-width: 600px) {
+      .header h1 { font-size: 17px; }
+      .filter-card { flex-direction: column; }
+      .filter-card select { width: 100%; }
+      .tab { font-size: 9px; padding: 8px 4px; min-width: 50px; }
+      .podium-item { min-width: 70px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📊 Dashboard Admin</h1>
+    <div class="subtitle">MIFDA & QURBA - Monitoring Media Sosial</div>
+    <div class="period" id="textPeriode">Pilih Bulan & Tahun</div>
+  </div>
+  
+  <div class="container">
+    <div class="filter-card">
+      <label>📅 Bulan:</label><select id="filterBulan"></select>
+      <label>📆 Tahun:</label><select id="filterTahun"></select>
+      <button class="btn btn-refresh" id="btnRefresh">🔄 Lihat</button>
+      <button class="btn btn-outline btn-sm" id="btnLaporan">📊 Laporan</button>
+      <button class="btn btn-logout btn-sm" id="btnLogout">🚪 Keluar</button>
+    </div>
+    
+    <div class="monitor-card" id="panelMonitoring" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div class="card-title" style="margin-bottom:0;">📋 Monitoring Laporan <span id="monitorBulan"></span></div>
+        <div><span class="monitor-status" id="monitorStatus">TUTUP</span>
+        <button class="btn btn-sm" id="btnBukaTutup" style="margin-left:8px;">🔓 Buka</button></div>
+      </div>
+      <div class="monitor-row">
+        <div class="monitor-stat"><div class="big" style="color:#10b981;" id="monitorSudah">0</div><div class="lbl">✅ Sudah Lapor</div></div>
+        <div class="monitor-stat"><div class="big" style="color:#ef4444;" id="monitorBelum">0</div><div class="lbl">❌ Belum Lapor</div></div>
+      </div>
+      <div class="monitor-row">
+        <div style="flex:1;min-width:200px;"><b>🥇 3 Pertama Lapor:</b><table class="monitor-list" id="listPertama"></table></div>
+        <div style="flex:1;min-width:200px;"><b>🏁 3 Terakhir Lapor:</b><table class="monitor-list" id="listTerakhir"></table></div>
+      </div>
+    </div>
+    
+    <div class="tabs">
+      <div class="tab active" id="tabBtnMifda"><span class="icon">🏆</span>MIFDA</div>
+      <div class="tab" id="tabBtnQurba"><span class="icon">🏆</span>QURBA</div>
+      <div class="tab" id="tabBtnGrafik"><span class="icon">📈</span>Grafik</div>
+      <div class="tab" id="tabBtnAkhir"><span class="icon">🏁</span>Akhir</div>
+    </div>
+    
+    <div id="loadingArea" class="loading" style="display:none;"><div class="spinner"></div><p>Memuat data...</p></div>
+    
+    <div id="tabMifda" class="tab-content active">
+      <div class="card"><div class="card-title"><img src="https://img.icons8.com/color/48/instagram-new.png" class="platform-icon"> 🏆 Instagram - MIFDA</div><div class="table-wrap" id="tabelIG_Mifda"></div></div>
+      <div class="card"><div class="card-title"><img src="https://img.icons8.com/color/48/facebook-new.png" class="platform-icon"> 🏆 Facebook - MIFDA</div><div class="table-wrap" id="tabelFB_Mifda"></div></div>
+      <div class="card"><div class="card-title"><img src="https://img.icons8.com/color/48/tiktok--v1.png" class="platform-icon"> 🏆 TikTok - MIFDA</div><div class="table-wrap" id="tabelTT_Mifda"></div></div>
+    </div>
+    
+    <div id="tabQurba" class="tab-content">
+      <div class="card"><div class="card-title"><img src="https://img.icons8.com/color/48/instagram-new.png" class="platform-icon"> 🏆 Instagram - QURBA</div><div class="table-wrap" id="tabelIG_Qurba"></div></div>
+      <div class="card"><div class="card-title"><img src="https://img.icons8.com/color/48/facebook-new.png" class="platform-icon"> 🏆 Facebook - QURBA</div><div class="table-wrap" id="tabelFB_Qurba"></div></div>
+      <div class="card"><div class="card-title"><img src="https://img.icons8.com/color/48/tiktok--v1.png" class="platform-icon"> 🏆 TikTok - QURBA</div><div class="table-wrap" id="tabelTT_Qurba"></div></div>
+    </div>
+    
+    <div id="tabGrafik" class="tab-content">
+      <div class="chart-row">
+        <div class="chart-card"><h3><img src="https://img.icons8.com/color/48/instagram-new.png" class="platform-icon"> Instagram</h3><div class="chart-container"><canvas id="chartIG"></canvas></div></div>
+        <div class="chart-card"><h3><img src="https://img.icons8.com/color/48/facebook-new.png" class="platform-icon"> Facebook</h3><div class="chart-container"><canvas id="chartFB"></canvas></div></div>
+        <div class="chart-card"><h3><img src="https://img.icons8.com/color/48/tiktok--v1.png" class="platform-icon"> TikTok</h3><div class="chart-container"><canvas id="chartTT"></canvas></div></div>
+      </div>
+      <div class="card"><div class="card-title" style="justify-content:center;"><img src="https://img.icons8.com/color/48/instagram-new.png" class="platform-icon"> Podium Instagram</div><div class="podium-container" id="podiumIG"></div></div>
+      <div class="card"><div class="card-title" style="justify-content:center;"><img src="https://img.icons8.com/color/48/facebook-new.png" class="platform-icon"> Podium Facebook</div><div class="podium-container" id="podiumFB"></div></div>
+      <div class="card"><div class="card-title" style="justify-content:center;"><img src="https://img.icons8.com/color/48/tiktok--v1.png" class="platform-icon"> Podium TikTok</div><div class="podium-container" id="podiumTT"></div></div>
+    </div>
+    
+    <div id="tabAkhir" class="tab-content">
+      <div class="card">
+        <div class="card-title">🏁 Klasemen Akhir</div>
+        <div class="filter-card" style="margin-bottom:15px;">
+          <label>Dari:</label><select id="drBulan"></select><select id="drTahun"></select>
+          <label>Sampai:</label><select id="spBulan"></select><select id="spTahun"></select>
+          <button class="btn btn-refresh btn-sm" id="btnHitung">🔄 Hitung</button>
+        </div>
+        <div class="table-wrap" id="tabelAkhirIG"></div>
+        <div class="table-wrap" id="tabelAkhirFB" style="margin-top:15px;"></div>
+        <div class="table-wrap" id="tabelAkhirTT" style="margin-top:15px;"></div>
+      </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+  </div>
+    
+  <script>
+    var BASE_URL = 'https://script.google.com/macros/s/AKfycbyok_773z-HjbarnOA5q74MDop8BE6O-2b1Xl0EQ4GmpVi-jg-kNFIhDzra62GHLWp5/exec';
+    function getUrl(page) { return BASE_URL + '?page=' + page; }
+    
+    function cekLogin() {
+      var session = localStorage.getItem('mifda_session');
+      if (!session) { window.location.href = getUrl('login'); return false; }
+      var sess = JSON.parse(session);
+      if (new Date().getTime() - sess.loginTime > 7200000) { localStorage.removeItem('mifda_session'); window.location.href = getUrl('login'); return false; }
+      if (sess.role !== 'admin') { window.location.href = getUrl('pengurus') + '&nama=' + encodeURIComponent(sess.role); return false; }
+      return true;
+    }
+    function logout() { localStorage.removeItem('mifda_session'); window.location.href = getUrl('login'); }
+    if (!cekLogin()) { throw new Error('Redirecting...'); }
+    
+    var semuaData = null, filterBulan = '', filterTahun = '';
+    var chartInstances = {};
+    
+    function showToast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); }, 3000); }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('btnRefresh').addEventListener('click', loadDashboard);
+      document.getElementById('btnLogout').addEventListener('click', logout);
+      document.getElementById('btnLaporan').addEventListener('click', function(){ window.open(getUrl('laporan')); });
+      document.getElementById('tabBtnMifda').addEventListener('click', function(){ switchTab('mifda'); });
+      document.getElementById('tabBtnQurba').addEventListener('click', function(){ switchTab('qurba'); });
+      document.getElementById('tabBtnGrafik').addEventListener('click', function(){ switchTab('grafik'); });
+      document.getElementById('tabBtnAkhir').addEventListener('click', function(){ switchTab('akhir'); });
+      document.getElementById('btnHitung').addEventListener('click', hitungKlasemenAkhir);
+      loadDropdowns();
+    });
+    
+    function loadDropdowns() {
+      google.script.run.withSuccessHandler(function(data) {
+        function isi(id, list) { var s=document.getElementById(id); s.innerHTML=''; list.forEach(function(i){ var o=document.createElement('option'); o.value=i; o.textContent=i; s.appendChild(o); }); }
+        isi('filterBulan', data.bulanHijri); isi('filterTahun', data.tahunHijri);
+        isi('drBulan', data.bulanHijri); isi('drTahun', data.tahunHijri);
+        isi('spBulan', data.bulanHijri); isi('spTahun', data.tahunHijri);
+        document.getElementById('filterBulan').value = data.bulanHijri[0]||'';
+        document.getElementById('filterTahun').value = data.tahunHijri[0]||'';
+        filterBulan = document.getElementById('filterBulan').value;
+        filterTahun = document.getElementById('filterTahun').value;
+        document.getElementById('drBulan').value='Syawal'; document.getElementById('drTahun').value='1447';
+        document.getElementById('spBulan').value='Sya\'ban'; document.getElementById('spTahun').value='1448';
+      }).getDropdownData();
+    }
+    
+    function loadDashboard() {
+      filterBulan = document.getElementById('filterBulan').value;
+      filterTahun = document.getElementById('filterTahun').value;
+      if (!filterBulan || !filterTahun) { showToast('⚠️ Pilih Bulan dan Tahun!'); return; }
+      document.getElementById('textPeriode').textContent = '📅 ' + filterBulan + ' ' + filterTahun;
+      document.getElementById('loadingArea').style.display = 'block';
+      google.script.run.withSuccessHandler(function(data) {
+        semuaData = data;
+        document.getElementById('loadingArea').style.display = 'none';
+        switchTab('mifda');
+        showToast('✅ Data berhasil dimuat!');
+        // MONITORING
+        google.script.run.withSuccessHandler(function(st) {
+          if (!st) return;
+          var pn = document.getElementById('panelMonitoring');
+          if (!pn) return;
+          pn.style.display = 'block';
+          var bln = st.bulan || filterBulan || '';
+          var thn = st.tahun || filterTahun || '';
+          document.getElementById('monitorBulan').textContent = bln + ' ' + thn;
+          var se = document.getElementById('monitorStatus');
+          var bb = document.getElementById('btnBukaTutup');
+          if (st.status === 'BUKA') {
+            se.textContent = '🟢 BUKA'; se.className = 'monitor-status status-buka';
+            bb.textContent = '🔒 Tutup'; bb.style.background = '#ef4444'; bb.style.color = 'white';
+          } else {
+            se.textContent = '🔴 TUTUP'; se.className = 'monitor-status status-tutup';
+            bb.textContent = '🔓 Buka'; bb.className = 'btn btn-sm'; bb.style.background = '#0f3460'; bb.style.color = 'white';
+          }
+          bb.onclick = function() {
+            if (st.status === 'BUKA') {
+              google.script.run.withSuccessHandler(function(r) { showToast(r); loadDashboard(); }).tutupLaporan();
+            } else {
+              var fb = document.getElementById('filterBulan').value;
+              var ft = document.getElementById('filterTahun').value;
+              if (!fb || !ft) { showToast('⚠️ Pilih Bulan dan Tahun!'); return; }
+              google.script.run.withSuccessHandler(function(r) { showToast(r); loadDashboard(); }).bukaLaporan(fb, ft);
+            }
+          };
+          if (bln && thn) {
+            google.script.run.withSuccessHandler(function(dt) {
+              if (!dt) return;
+              var elSudah = document.getElementById('monitorSudah');
+              var elBelum = document.getElementById('monitorBelum');
+              if (elSudah) elSudah.textContent = dt.sudahLapor || 0;
+              if (elBelum) elBelum.textContent = dt.belumLapor || 0;
+              var h1 = '<tr><td style="color:#888;">Belum ada</td></tr>';
+              var h2 = '<tr><td style="color:#888;">Belum ada</td></tr>';
+              if (dt.tigaPertama && dt.tigaPertama.length > 0) {
+                h1 = '';
+                for (var i = 0; i < dt.tigaPertama.length; i++) {
+                  var d = dt.tigaPertama[i];
+                  var t = d.waktu ? new Date(d.waktu).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}) : '-';
+                  h1 += '<tr><td>' + (i+1) + '.</td><td><b>' + d.nama + '</b></td><td style="font-size:10px;color:#888;">' + t + '</td></tr>';
+                }
+              }
+              if (dt.tigaTerakhir && dt.tigaTerakhir.length > 0) {
+                h2 = '';
+                for (var i = 0; i < dt.tigaTerakhir.length; i++) {
+                  var d = dt.tigaTerakhir[i];
+                  var t = d.waktu ? new Date(d.waktu).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}) : '-';
+                  h2 += '<tr><td>' + (i+1) + '.</td><td><b>' + d.nama + '</b></td><td style="font-size:10px;color:#888;">' + t + '</td></tr>';
+                }
+              }
+              document.getElementById('listPertama').innerHTML = h1;
+              document.getElementById('listTerakhir').innerHTML = h2;
+            }).getMonitoringData(bln, thn);
+          }
+        }).getStatusLaporan();
+      }).withFailureHandler(function(err) { document.getElementById('loadingArea').style.display = 'none'; showToast('❌ '+err.message); }).ambilSemuaData(filterBulan, filterTahun);
+    }
+    
+    function switchTab(tab) {
+      if (!semuaData && tab !== 'akhir') { showToast('⚠️ Klik Refresh dulu!'); return; }
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(function(c) { c.style.display = 'none'; c.classList.remove('active'); });
+      
+      if (tab === 'mifda') {
+        document.getElementById('tabBtnMifda').classList.add('active');
+        document.getElementById('tabMifda').style.display = 'block';
+        renderKlasemen('MIFDA');
+      } else if (tab === 'qurba') {
+        document.getElementById('tabBtnQurba').classList.add('active');
+        document.getElementById('tabQurba').style.display = 'block';
+        renderKlasemen('QURBA');
+      } else if (tab === 'grafik') {
+        document.getElementById('tabBtnGrafik').classList.add('active');
+        document.getElementById('tabGrafik').style.display = 'block';
+        renderGrafik();
+      } else if (tab === 'akhir') {
+        document.getElementById('tabBtnAkhir').classList.add('active');
+        document.getElementById('tabAkhir').style.display = 'block';
+      }
+    }
+    
+    function renderKlasemen(grup) {
+      if (!semuaData) return;
+      var allP = semuaData.pengurus || [];
+      var d = semuaData.data || {};
+      
+      var p = allP.filter(function(x) {
+        return x.toLowerCase().indexOf(grup.toLowerCase()) === 0;
+      });
+      
+      function tbl(arr, containerId) {
+        var s = p.slice().sort(function(a,b){ return ((d[b]?d[b][arr[0]]+d[b][arr[1]]:-999)) - ((d[a]?d[a][arr[0]]+d[a][arr[1]]:-999)); });
+        var h = '<table><thead><tr><th class="text-center">#</th><th>Nama</th><th class="text-center">'+arr[2]+'</th><th class="text-center">Poin</th><th class="text-center">'+arr[3]+'</th><th class="text-center">Poin</th><th class="text-center">Total</th></tr></thead><tbody>';
+        for (var i=0; i<s.length; i++) {
+          var x = s[i], dd = d[x] || {};
+          var v1 = dd[arr[4]]||0, p1 = dd[arr[0]]!==undefined?dd[arr[0]]:-1;
+          var v2 = dd[arr[5]]||0, p2 = dd[arr[1]]!==undefined?dd[arr[1]]:-1;
+          var rc = i===0?'rank-1':(i===1?'rank-2':(i===2?'rank-3':''));
+          h += '<tr class="'+rc+'"><td class="text-center"><b>'+(i+1)+'</b></td><td><b>'+x+'</b></td><td class="text-center">'+(v1>=0?'+'+v1:v1)+'</td><td class="text-center"><b>'+p1+'</b></td><td class="text-center">'+v2+'</td><td class="text-center"><b>'+p2+'</b></td><td class="text-center"><b>'+(p1+p2)+'</b></td></tr>';
+        }
+        h += '</tbody></table>';
+        document.getElementById(containerId).innerHTML = h;
+      }
+      
+      var suffix = grup === 'MIFDA' ? '_Mifda' : '_Qurba';
+      tbl(['igFolPoin','igPostPoin','Pertumbuhan','Postingan','igGrowth','igPostJml'], 'tabelIG'+suffix);
+      tbl(['fbFolPoin','fbPostPoin','Pertumbuhan','Postingan','fbGrowth','fbPostJml'], 'tabelFB'+suffix);
+      tbl(['ttFolPoin','ttLikePoin','Pertumbuhan','Like','ttGrowth','ttLikeJml'], 'tabelTT'+suffix);
+    }
+    
+    function renderGrafik() {
+      if (!semuaData) return;
+      if (chartInstances.c1) { chartInstances.c1.destroy(); chartInstances.c1 = null; }
+      if (chartInstances.c2) { chartInstances.c2.destroy(); chartInstances.c2 = null; }
+      if (chartInstances.c3) { chartInstances.c3.destroy(); chartInstances.c3 = null; }
+      var d = semuaData.data || {}, p = semuaData.pengurus || [];
+      
+      function bar(canvasId, key1, key2, label1, label2, warna1, warna2) {
+        var ctx = document.getElementById(canvasId); if (!ctx) return null;
+        var s = p.slice().filter(function(x){ return d[x]&&(d[x][key1]!==0||d[x][key2]!==0); }).sort(function(a,b){ return (d[b][key1]+d[b][key2])-(d[a][key1]+d[a][key2]); }).slice(0,10);
+        return new Chart(ctx, { type:'bar', data:{ labels:s, datasets:[
+          { label:label1, data:s.map(function(x){return d[x]?d[x][key1]:0;}), backgroundColor:warna1, borderRadius:8, borderSkipped:false },
+          { label:label2, data:s.map(function(x){return d[x]?d[x][key2]:0;}), backgroundColor:warna2, borderRadius:8, borderSkipped:false }
+        ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top', labels:{ usePointStyle:true, font:{ family:'Poppins', size:11 } } } }, scales:{ x:{ display:false }, y:{ beginAtZero:true } } } });
+      }
+      chartInstances.c1 = bar('chartIG', 'igGrowth', 'igPostJml', 'Pertumbuhan', 'Postingan', 'rgba(59,130,246,0.8)', 'rgba(147,197,253,0.8)');
+      chartInstances.c2 = bar('chartFB', 'fbGrowth', 'fbPostJml', 'Pertumbuhan', 'Postingan', 'rgba(245,158,11,0.8)', 'rgba(252,211,77,0.8)');
+      chartInstances.c3 = bar('chartTT', 'ttGrowth', 'ttLikeJml', 'Pertumbuhan', 'Like', 'rgba(16,185,129,0.8)', 'rgba(110,231,183,0.8)');
+      
+      function podium(cid, kf, kp) {
+        var c = document.getElementById(cid); if (!c) return;
+        var s = p.slice().sort(function(a,b){ return ((d[b]?d[b][kf]+d[b][kp]:-999))-((d[a]?d[a][kf]+d[a][kp]:-999)); }).slice(0,3);
+        var medals=['🥇','🥈','🥉'], ranks=['podium-1','podium-2','podium-3'];
+        var order = s.length===3?[1,0,2]:(s.length===2?[1,0]:[0]), h = '';
+        for (var i=0; i<order.length; i++) { var idx=order[i], k=s[idx]; h+='<div class="podium-item '+ranks[idx]+'"><div class="podium-rank">'+(idx+1)+'</div><span class="podium-medal">'+medals[idx]+'</span><div class="podium-name">'+k+'</div><div class="podium-score">'+((d[k]?d[k][kf]+d[k][kp]:0))+'</div></div>'; }
+        c.innerHTML = h;
+      }
+      podium('podiumIG', 'igFolPoin', 'igPostPoin');
+      podium('podiumFB', 'fbFolPoin', 'fbPostPoin');
+      podium('podiumTT', 'ttFolPoin', 'ttLikePoin');
+    }
+    
+    function hitungKlasemenAkhir() {
+      var drBulan = document.getElementById('drBulan').value, drTahun = document.getElementById('drTahun').value;
+      var spBulan = document.getElementById('spBulan').value, spTahun = document.getElementById('spTahun').value;
+      if (!drBulan || !drTahun || !spBulan || !spTahun) { showToast('⚠️ Pilih range bulan!'); return; }
+      showToast('⏳ Menghitung...');
+      google.script.run.withSuccessHandler(function(result) {
+        var d = result.data || {}, p = result.pengurus || [];
+        function tbl(arr, title, containerId) {
+          var s = p.slice().sort(function(a,b){ return ((d[b]?d[b][arr[0]]+d[b][arr[1]]:-999))-((d[a]?d[a][arr[0]]+d[a][arr[1]]:-999)); });
+          var h = '<h4>' + title + '</h4><table><thead><tr><th class="text-center">#</th><th>Nama</th><th class="text-center">'+arr[2]+'</th><th class="text-center">Poin</th><th class="text-center">'+arr[3]+'</th><th class="text-center">Poin</th><th class="text-center">Total</th></tr></thead><tbody>';
+          for (var i=0; i<s.length; i++) {
+            var x = s[i], dd = d[x] || {};
+            var v1 = dd[arr[4]]||0, p1 = dd[arr[0]]!==undefined?dd[arr[0]]:-1;
+            var v2 = dd[arr[5]]||0, p2 = dd[arr[1]]!==undefined?dd[arr[1]]:-1;
+            var rc = i===0?'rank-1':(i===1?'rank-2':(i===2?'rank-3':''));
+            h += '<tr class="'+rc+'"><td class="text-center"><b>'+(i+1)+'</b></td><td><b>'+x+'</b></td><td class="text-center">'+(v1>=0?'+'+v1:v1)+'</td><td class="text-center"><b>'+p1+'</b></td><td class="text-center">'+v2+'</td><td class="text-center"><b>'+p2+'</b></td><td class="text-center"><b>'+(p1+p2)+'</b></td></tr>';
+          }
+          h += '</tbody></table>';
+          document.getElementById(containerId).innerHTML = h;
+        }
+        tbl(['igFolPoin','igPostPoin','Pertumbuhan','Postingan','igGrowth','igPostJml'], '<img src="https://img.icons8.com/color/48/instagram-new.png" class="platform-icon"> Instagram', 'tabelAkhirIG');
+        tbl(['fbFolPoin','fbPostPoin','Pertumbuhan','Postingan','fbGrowth','fbPostJml'], '<img src="https://img.icons8.com/color/48/facebook-new.png" class="platform-icon"> Facebook', 'tabelAkhirFB');
+        tbl(['ttFolPoin','ttLikePoin','Pertumbuhan','Like','ttGrowth','ttLikeJml'], '<img src="https://img.icons8.com/color/48/tiktok--v1.png" class="platform-icon"> TikTok', 'tabelAkhirTT');
+        showToast('✅ Klasemen Akhir berhasil!');
+      }).withFailureHandler(function(err) { showToast('❌ '+err.message); }).ambilDataRange(drBulan, drTahun, spBulan, spTahun);
+    }
+  </script>
+</body>
+</html>
