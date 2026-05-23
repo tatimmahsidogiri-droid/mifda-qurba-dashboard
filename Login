@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+    .login-card { background: white; border-radius: 20px; padding: 35px 25px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; }
+    .logo { font-size: 50px; margin-bottom: 10px; }
+    h1 { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 5px; }
+    .subtitle { font-size: 12px; color: #888; margin-bottom: 25px; }
+    label { display: block; text-align: left; font-size: 12px; font-weight: 600; color: #555; margin-top: 12px; margin-bottom: 4px; }
+    select, input { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-family: 'Poppins', sans-serif; background: #f9fafb; transition: border 0.2s; }
+    select:focus, input:focus { border-color: #0f3460; outline: none; }
+    button { width: 100%; padding: 14px; background: #0f3460; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; margin-top: 25px; cursor: pointer; font-family: 'Poppins', sans-serif; transition: background 0.2s; }
+    button:hover { background: #1a4a8a; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    .role-selector { display: flex; gap: 10px; margin-bottom: 10px; }
+    .role-btn { flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; background: white; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Poppins', sans-serif; transition: all 0.2s; color: #666; }
+    .role-btn.active { border-color: #0f3460; background: #f0f4ff; color: #0f3460; }
+    #pengurusSelect { display: none; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="logo">📊</div>
+    <h1>Dashboard MIFDA & QURBA</h1>
+    <p class="subtitle">Monitoring Media Sosial</p>
+    <div class="role-selector">
+      <button class="role-btn active" onclick="pilihRole('admin')" id="btnAdmin">👑 Admin</button>
+      <button class="role-btn" onclick="pilihRole('pengurus')" id="btnPengurus">👤 Pengurus</button>
+    </div>
+    <div id="pengurusSelect">
+      <label>Nama Pengurus</label>
+      <select id="namaPengurus"><option value="">-- Pilih --</option></select>
+    </div>
+    <label>Username</label>
+    <input type="text" id="username" placeholder="Masukkan username" autocomplete="off">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Masukkan password">
+    <button onclick="login()" id="btnLogin">🔐 Masuk</button>
+  </div>
+  <script>
+    var role = 'admin';
+    function showToast(msg, type) {
+      var existingToast = document.querySelector('.custom-toast');
+      if (existingToast) existingToast.remove();
+      var toast = document.createElement('div');
+      toast.className = 'custom-toast';
+      toast.textContent = msg;
+      toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:14px 24px;border-radius:12px;font-size:13px;font-weight:600;z-index:9999;font-family:Poppins,sans-serif;max-width:90%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.2);transition:all 0.3s ease;';
+      if (type === 'error') { toast.style.background = '#fee2e2'; toast.style.color = '#991b1b'; toast.style.border = '2px solid #fecaca'; }
+      else if (type === 'success') { toast.style.background = '#d1fae5'; toast.style.color = '#065f46'; toast.style.border = '2px solid #a7f3d0'; }
+      else { toast.style.background = '#1a1a2e'; toast.style.color = 'white'; }
+      document.body.appendChild(toast);
+      setTimeout(function() { toast.style.opacity = '0'; toast.style.transform = 'translateX(-50%) translateY(-20px)'; setTimeout(function() { if (toast.parentNode) toast.remove(); }, 300); }, 4000);
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      google.script.run.withSuccessHandler(function(data) {
+        var sel = document.getElementById('namaPengurus');
+        data.pengurus.forEach(function(p) { var opt = document.createElement('option'); opt.value = p; opt.text = p; sel.appendChild(opt); });
+      }).getDropdownData();
+    });
+    function pilihRole(r) {
+      role = r;
+      document.getElementById('btnAdmin').classList.remove('active');
+      document.getElementById('btnPengurus').classList.remove('active');
+      if (r === 'admin') { document.getElementById('btnAdmin').classList.add('active'); document.getElementById('pengurusSelect').style.display = 'none'; document.getElementById('username').placeholder = 'Masukkan username admin'; }
+      else { document.getElementById('btnPengurus').classList.add('active'); document.getElementById('pengurusSelect').style.display = 'block'; document.getElementById('username').placeholder = 'Masukkan username pengurus'; }
+    }
+    function getUrl(page) { return 'https://script.google.com/macros/s/AKfycbyok_773z-HjbarnOA5q74MDop8BE6O-2b1Xl0EQ4GmpVi-jg-kNFIhDzra62GHLWp5/exec?page=' + page; }
+    function login() {
+      var username = document.getElementById('username').value.trim();
+      var password = document.getElementById('password').value.trim();
+      if (!username || !password) { showToast('⚠️ Mohon isi username dan password!', 'error'); return; }
+      var btn = document.getElementById('btnLogin');
+      btn.disabled = true; btn.textContent = '⏳ Mengecek...';
+      google.script.run.withSuccessHandler(function(resp) {
+        if (resp.sukses) {
+          showToast('✅ Login berhasil!', 'success');
+          var session = { username: resp.username, role: resp.role, token: resp.token, loginTime: new Date().getTime() };
+          localStorage.setItem('mifda_session', JSON.stringify(session));
+          var targetUrl;
+          if (resp.role === 'admin') { targetUrl = getUrl('admin'); }
+          else { targetUrl = getUrl('pengurus') + '&nama=' + encodeURIComponent(resp.role); }
+          setTimeout(function() { window.location.replace(targetUrl); }, 600);
+        } else { showToast(resp.pesan || '❌ Login gagal!', 'error'); btn.disabled = false; btn.textContent = '🔐 Masuk'; }
+      }).withFailureHandler(function(err) { showToast('❌ Gagal koneksi: ' + err.message, 'error'); btn.disabled = false; btn.textContent = '🔐 Masuk'; }).prosesLogin(username, password);
+    }
+  </script>
+</body>
+</html>
